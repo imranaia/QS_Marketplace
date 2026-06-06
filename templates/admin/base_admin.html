@@ -1,0 +1,57 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="admin-wrap">
+
+  <!-- SIDEBAR -->
+  <aside class="admin-sidebar">
+    <div class="card card-sm mb-2" style="text-align:center;padding:1.1rem;">
+      <div style="width:44px;height:44px;border-radius:50%;background:var(--red);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:1rem;margin:0 auto 0.4rem;">
+        {{ (current_user.first_name or 'A')[0].upper() }}
+      </div>
+      <div style="font-weight:700;font-size:0.85rem;">{{ current_user.full_name }}</div>
+      <div style="font-size:0.7rem;color:var(--grey);">Administrator</div>
+    </div>
+
+    <nav class="sidebar-nav card card-sm">
+      <a href="{{ url_for('admin_dashboard') }}"
+         {% if request.endpoint=='admin_dashboard' %}class="active"{% endif %}>
+        <i class="fa fa-chart-pie"></i> Dashboard
+      </a>
+      <a href="{{ url_for('admin_users') }}"
+         {% if request.endpoint=='admin_users' %}class="active"{% endif %}>
+        <i class="fa fa-users"></i> Users
+      </a>
+      <a href="{{ url_for('admin_projects') }}"
+         {% if request.endpoint=='admin_projects' %}class="active"{% endif %}>
+        <i class="fa fa-folder-open"></i> Projects
+      </a>
+      <a href="{{ url_for('admin_transactions') }}"
+         {% if request.endpoint=='admin_transactions' %}class="active"{% endif %}>
+        <i class="fa fa-coins"></i> Commissions
+      </a>
+      <a href="{{ url_for('admin_settings') }}"
+         {% if request.endpoint=='admin_settings' %}class="active"{% endif %}>
+        <i class="fa fa-cog"></i> Settings
+      </a>
+      <a href="{{ url_for('admin_database') }}"
+         {% if request.endpoint=='admin_database' %}class="active"{% endif %}
+         style="{% if request.endpoint=='admin_database' %}color:var(--red)!important;{% endif %}">
+        <i class="fa fa-database"></i> Database
+      </a>
+      <hr style="border:none;border-top:1px solid var(--border);margin:0.4rem 0;">
+      <a href="{{ url_for('index') }}">
+        <i class="fa fa-globe"></i> View Site
+      </a>
+      <a href="{{ url_for('logout') }}" style="color:var(--red)!important;">
+        <i class="fa fa-sign-out-alt"></i> Logout
+      </a>
+    </nav>
+  </aside>
+
+  <!-- MAIN CONTENT -->
+  <main style="min-width:0;overflow:hidden;">
+    {% block admin_content %}{% endblock %}
+  </main>
+
+</div>
+{% endblock %}

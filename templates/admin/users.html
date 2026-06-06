@@ -1,0 +1,137 @@
+{% extends 'admin/base_admin.html' %}
+{% block title %}Manage Users — Admin{% endblock %}
+{% block admin_content %}
+
+<div class="page-header flex justify-between items-center flex-wrap gap-2">
+  <div><h1>Manage Users</h1><p>Verify, activate, suspend or delete platform accounts</p></div>
+  <div style="font-size:0.875rem;color:var(--grey);">{{ users|length }} user(s) shown</div>
+</div>
+
+<!-- FILTERS -->
+<form method="GET" class="card card-sm mb-3" style="display:flex;gap:0.75rem;flex-wrap:wrap;align-items:flex-end;">
+  <div style="flex:1;min-width:160px;"><label>Search</label><input type="text" name="q" placeholder="Name or email…" value="{{ q }}"></div>
+  <div style="min-width:130px;"><label>Role</label>
+    <select name="role">
+      <option value="">All Roles</option>
+      <option value="client" {{ 'selected' if role=='client' }}>Client</option>
+      <option value="qs" {{ 'selected' if role=='qs' }}>QS Professional</option>
+      <option value="vendor" {{ 'selected' if role=='vendor' }}>Vendor</option>
+      <option value="admin" {{ 'selected' if role=='admin' }}>Admin</option>
+    </select>
+  </div>
+  <div style="min-width:130px;"><label>Status</label>
+    <select name="status">
+      <option value="">All Statuses</option>
+      <option value="pending" {{ 'selected' if status=='pending' }}>Pending</option>
+      <option value="active" {{ 'selected' if status=='active' }}>Active</option>
+      <option value="suspended" {{ 'selected' if status=='suspended' }}>Suspended</option>
+    </select>
+  </div>
+  <button type="submit" class="btn btn-primary btn-sm">Filter</button>
+  {% if q or role or status %}<a href="{{ url_for('admin_users') }}" class="btn btn-outline btn-sm">Clear</a>{% endif %}
+</form>
+
+<!-- USERS TABLE -->
+{% if users %}
+<div class="table-wrap">
+  <table>
+    <thead>
+      <tr>
+        <th>#</th>
+        <th>User</th>
+        <th>Role</th>
+        <th>Status</th>
+        <th>Verified</th>
+        <th>Joined</th>
+        <th>Last Login</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for u in users %}
+      <tr>
+        <td style="color:var(--grey);font-size:0.8rem;">{{ u.id }}</td>
+        <td>
+          <div style="font-weight:600;font-size:0.875rem;">{{ u.full_name }}</div>
+          <div style="font-size:0.75rem;color:var(--grey);">{{ u.email }}</div>
+          {% if u.company_name %}<div style="font-size:0.72rem;color:var(--grey);">{{ u.company_name }}</div>{% endif %}
+          {% if u.location %}<div style="font-size:0.72rem;color:var(--grey);"><i class="fa fa-map-marker-alt"></i> {{ u.location }}</div>{% endif %}
+        </td>
+        <td><span class="badge badge-{{ u.role }}">{{ u.role }}</span></td>
+        <td><span class="badge badge-{{ u.status }}">{{ u.status }}</span></td>
+        <td>
+          {% if u.verified %}
+          <span style="color:var(--green);"><i class="fa fa-check-circle"></i> Yes</span>
+          {% else %}
+          <span style="color:var(--grey);"><i class="fa fa-times-circle"></i> No</span>
+          {% endif %}
+        </td>
+        <td style="font-size:0.8rem;color:var(--grey);">{{ u.joined_at.strftime('%d %b %Y') if u.joined_at else '—' }}</td>
+        <td style="font-size:0.8rem;color:var(--grey);">{{ u.last_login.strftime('%d %b %Y') if u.last_login else 'Never' }}</td>
+        <td>
+          {% if u.role != 'admin' %}
+          <div style="display:flex;gap:0.4rem;flex-wrap:wrap;">
+            <!-- VERIFY -->
+            {% if not u.verified or u.status == 'pending' %}
+            <form method="POST" action="{{ url_for('admin_user_action', uid=u.id) }}" style="display:inline;">
+              <input type="hidden" name="action" value="verify">
+              <button class="btn btn-sm btn-green" title="Verify & Activate" onclick="return confirm('Verify and activate {{ u.full_name }}?')">
+                <i class="fa fa-check"></i> Verify
+              </button>
+            </form>
+            {% endif %}
+
+            <!-- ACTIVATE -->
+            {% if u.status == 'suspended' %}
+            <form method="POST" action="{{ url_for('admin_user_action', uid=u.id) }}" style="display:inline;">
+              <input type="hidden" name="action" value="activate">
+              <button class="btn btn-sm btn-blue" title="Re-activate account" onclick="return confirm('Re-activate {{ u.full_name }}?')">
+                <i class="fa fa-unlock"></i> Enable
+              </button>
+            </form>
+            {% endif %}
+
+            <!-- SUSPEND -->
+            {% if u.status == 'active' %}
+            <form method="POST" action="{{ url_for('admin_user_action', uid=u.id) }}" style="display:inline;">
+              <input type="hidden" name="action" value="suspend">
+              <button class="btn btn-sm btn-danger" title="Suspend account" onclick="return confirm('Suspend {{ u.full_name }}? They will not be able to log in.')">
+                <i class="fa fa-ban"></i> Suspend
+              </button>
+            </form>
+            {% endif %}
+
+            <!-- DELETE -->
+            <form method="POST" action="{{ url_for('admin_user_action', uid=u.id) }}" style="display:inline;">
+              <input type="hidden" name="action" value="delete">
+              <button class="btn btn-sm" style="background:transparent;border:1px solid var(--border2);color:var(--grey);"
+                title="Permanently delete"
+                onclick="return confirm('PERMANENTLY DELETE {{ u.full_name }}? This cannot be undone.')">
+                <i class="fa fa-trash"></i>
+              </button>
+            </form>
+          </div>
+          {% else %}
+          <span style="font-size:0.75rem;color:var(--grey);">Admin account</span>
+          {% endif %}
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% else %}
+<div class="card"><div class="empty"><i class="fa fa-users"></i><p>No users found matching your filters.</p></div></div>
+{% endif %}
+
+<!-- LEGEND -->
+<div class="card card-sm mt-3" style="background:var(--dark);">
+  <div style="font-size:0.75rem;color:var(--grey);display:flex;flex-wrap:wrap;gap:1.5rem;">
+    <span><i class="fa fa-check" style="color:var(--green);"></i> <b>Verify</b> — Confirms identity, sets status to Active</span>
+    <span><i class="fa fa-unlock" style="color:var(--blue);"></i> <b>Enable</b> — Re-activates a suspended account</span>
+    <span><i class="fa fa-ban" style="color:var(--red);"></i> <b>Suspend</b> — Blocks login access temporarily</span>
+    <span><i class="fa fa-trash" style="color:var(--grey);"></i> <b>Delete</b> — Permanently removes the account</span>
+  </div>
+</div>
+
+{% endblock %}

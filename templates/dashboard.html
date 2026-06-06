@@ -1,0 +1,165 @@
+{% extends 'base.html' %}
+{% block title %}Dashboard — QS Marketplace{% endblock %}
+{% block content %}
+<div class="main">
+  <div class="page-header">
+    <div class="flex items-center justify-between">
+      <div>
+        <h1>Welcome, {{ current_user.first_name or current_user.email }}
+          <span class="badge badge-{{ current_user.role }}" style="font-size:0.7rem;vertical-align:middle;margin-left:0.5rem;">{{ current_user.role|upper }}</span>
+        </h1>
+        <p>
+          {% if current_user.status == 'pending' %}
+          <span style="color:var(--orange);"><i class="fa fa-clock"></i> Your account is pending admin verification.</span>
+          {% elif current_user.status == 'active' and not current_user.verified %}
+          <span style="color:var(--orange);"><i class="fa fa-exclamation-circle"></i> Account active but not yet verified by admin.</span>
+          {% else %}
+          Your dashboard — manage everything from here.
+          {% endif %}
+        </p>
+      </div>
+      {% if current_user.role == 'client' %}
+      <a href="{{ url_for('new_project') }}" class="btn btn-primary"><i class="fa fa-plus"></i> Post Project</a>
+      {% elif current_user.role == 'vendor' %}
+      <a href="{{ url_for('new_material') }}" class="btn btn-primary"><i class="fa fa-plus"></i> List Material</a>
+      {% endif %}
+    </div>
+  </div>
+
+  {% if current_user.role == 'client' %}
+  <!-- CLIENT DASHBOARD -->
+  <div class="grid-4 mb-3">
+    <div class="stat stat-accent"><div class="stat-label">My Projects</div><div class="stat-value">{{ my_projects|length }}</div></div>
+    <div class="stat stat-blue"><div class="stat-label">Open</div><div class="stat-value">{{ open_projects|length }}</div></div>
+    <div class="stat stat-green"><div class="stat-label">In Progress</div><div class="stat-value">{{ active_projects|length }}</div></div>
+    <div class="stat"><div class="stat-label">Unread Messages</div><div class="stat-value">{{ unread() }}</div></div>
+  </div>
+  <h2 style="font-size:1.25rem;font-weight:700;margin-bottom:1rem;">My Projects</h2>
+  {% if my_projects %}
+  <div class="table-wrap mb-3">
+    <table>
+      <thead><tr><th>Title</th><th>Category</th><th>Budget</th><th>Bids</th><th>Status</th><th>Action</th></tr></thead>
+      <tbody>
+      {% for p in my_projects %}
+      <tr>
+        <td><a href="{{ url_for('project_detail', pid=p.id) }}" style="color:var(--accent);">{{ p.title }}</a></td>
+        <td><span class="tag">{{ p.category }}</span></td>
+        <td>{% if p.budget %}₦{{ '{:,.0f}'.format(p.budget) }}{% else %}—{% endif %}</td>
+        <td>{{ p.bids|length }}</td>
+        <td><span class="badge badge-{{ p.status }}">{{ p.status.replace('_',' ') }}</span></td>
+        <td><a href="{{ url_for('project_detail', pid=p.id) }}" class="btn btn-outline btn-sm">View</a></td>
+      </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div class="card"><div class="empty"><i class="fa fa-folder-open"></i><p>No projects yet. <a href="{{ url_for('new_project') }}" style="color:var(--accent);">Post your first project</a></p></div></div>
+  {% endif %}
+
+  {% elif current_user.role == 'qs' %}
+  <!-- QS DASHBOARD -->
+  <div class="grid-4 mb-3">
+    <div class="stat stat-accent"><div class="stat-label">Total Bids</div><div class="stat-value">{{ my_bids|length }}</div></div>
+    <div class="stat stat-green"><div class="stat-label">Won Projects</div><div class="stat-value">{{ won_bids|length }}</div></div>
+    <div class="stat stat-blue"><div class="stat-label">Open Projects</div><div class="stat-value">{{ open_projects|length }}</div></div>
+    <div class="stat"><div class="stat-label">Unread Messages</div><div class="stat-value">{{ unread() }}</div></div>
+  </div>
+  <div class="grid-2">
+    <div>
+      <h2 style="font-size:1.2rem;font-weight:700;margin-bottom:1rem;">My Bids</h2>
+      {% if my_bids %}
+      <div style="display:flex;flex-direction:column;gap:0.75rem;">
+        {% for bid in my_bids[:5] %}
+        <a href="{{ url_for('project_detail', pid=bid.project_id) }}" class="card card-sm" style="display:block;transition:border-color 0.2s;" onmouseover="this.style.borderColor='var(--border2)'" onmouseout="this.style.borderColor='var(--border)'">
+          <div class="flex justify-between items-center">
+            <span style="font-weight:600;font-size:0.9rem;">{{ bid.project.title[:45] }}{% if bid.project.title|length > 45 %}...{% endif %}</span>
+            <span class="badge badge-{{ bid.status }}">{{ bid.status }}</span>
+          </div>
+          <div style="font-size:0.8rem;color:var(--grey);margin-top:0.25rem;">₦{{ '{:,.0f}'.format(bid.amount) }} · {{ bid.created_at.strftime('%d %b %Y') }}</div>
+        </a>
+        {% endfor %}
+      </div>
+      {% else %}<div class="card"><div class="empty"><i class="fa fa-gavel"></i><p>No bids placed yet</p></div></div>{% endif %}
+    </div>
+    <div>
+      <h2 style="font-size:1.2rem;font-weight:700;margin-bottom:1rem;">Available Projects</h2>
+      <div style="display:flex;flex-direction:column;gap:0.75rem;">
+        {% for p in open_projects[:5] %}
+        <a href="{{ url_for('project_detail', pid=p.id) }}" class="card card-sm" style="display:block;" onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor='var(--border)'">
+          <div class="flex justify-between items-center">
+            <span style="font-weight:600;font-size:0.9rem;">{{ p.title[:40] }}{% if p.title|length > 40 %}...{% endif %}</span>
+            <span class="tag">{{ p.category }}</span>
+          </div>
+          <div style="font-size:0.8rem;color:var(--grey);margin-top:0.25rem;">
+            {% if p.budget %}₦{{ '{:,.0f}'.format(p.budget) }}{% endif %} · {{ p.location }}
+          </div>
+        </a>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+
+  {% elif current_user.role == 'vendor' %}
+  <!-- VENDOR DASHBOARD -->
+  <div class="grid-4 mb-3">
+    <div class="stat stat-accent"><div class="stat-label">My Listings</div><div class="stat-value">{{ my_materials|length }}</div></div>
+    <div class="stat stat-green"><div class="stat-label">Active</div><div class="stat-value">{{ active_mats|length }}</div></div>
+    <div class="stat stat-blue"><div class="stat-label">Inactive</div><div class="stat-value">{{ my_materials|length - active_mats|length }}</div></div>
+    <div class="stat"><div class="stat-label">Unread Messages</div><div class="stat-value">{{ unread() }}</div></div>
+  </div>
+  <h2 style="font-size:1.25rem;font-weight:700;margin-bottom:1rem;">My Material Listings</h2>
+  {% if my_materials %}
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Material</th><th>Category</th><th>Price</th><th>Unit</th><th>Stock</th><th>Status</th><th>Action</th></tr></thead>
+      <tbody>
+      {% for m in my_materials %}
+      <tr>
+        <td><span style="font-weight:600;">{{ m.name }}</span></td>
+        <td><span class="tag">{{ m.category }}</span></td>
+        <td>₦{{ '{:,.0f}'.format(m.price) }}</td>
+        <td>{{ m.unit }}</td>
+        <td>{{ m.stock }}</td>
+        <td><span class="badge badge-{{ 'active' if m.active else 'suspended' }}">{{ 'Active' if m.active else 'Inactive' }}</span></td>
+        <td>
+          <form method="POST" action="{{ url_for('toggle_material', mid=m.id) }}" style="display:inline;">
+            <button class="btn btn-sm {{ 'btn-danger' if m.active else 'btn-success' }}">
+              {{ 'Deactivate' if m.active else 'Activate' }}
+            </button>
+          </form>
+        </td>
+      </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div class="card"><div class="empty"><i class="fa fa-box"></i><p>No materials listed yet. <a href="{{ url_for('new_material') }}" style="color:var(--accent);">Add your first listing</a></p></div></div>
+  {% endif %}
+  {% endif %}
+
+  {% if recent_messages %}
+  <div class="mt-4">
+    <div class="flex justify-between items-center mb-2">
+      <h2 style="font-size:1.2rem;font-weight:700;">New Messages</h2>
+      <a href="{{ url_for('messages') }}" class="btn btn-outline btn-sm">View All</a>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:0.5rem;">
+      {% for msg in recent_messages %}
+      <div class="card card-sm flex gap-2 items-center">
+        <div style="width:36px;height:36px;border-radius:50%;background:var(--accent);color:var(--black);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:0.85rem;flex-shrink:0;">
+          {{ (msg.sender.first_name or msg.sender.email)[0].upper() }}
+        </div>
+        <div style="flex:1;min-width:0;">
+          <div style="font-weight:600;font-size:0.875rem;">{{ msg.sender.full_name }}</div>
+          <div style="font-size:0.8rem;color:var(--grey);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ msg.body }}</div>
+        </div>
+        <div style="font-size:0.72rem;color:var(--grey);flex-shrink:0;">{{ msg.created_at.strftime('%d %b') }}</div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

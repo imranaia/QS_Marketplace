@@ -1,0 +1,131 @@
+{% extends 'admin/base_admin.html' %}
+{% block title %}Admin Dashboard — QS Marketplace{% endblock %}
+{% block admin_content %}
+
+<div class="page-header">
+  <h1>Admin Dashboard</h1>
+  <p>Platform overview and management centre</p>
+</div>
+
+<!-- STATS ROW 1: USERS -->
+<h2 style="font-size:0.75rem;color:var(--grey);text-transform:uppercase;letter-spacing:0.8px;font-weight:700;margin-bottom:0.75rem;">Users</h2>
+<div class="grid-4 mb-3">
+  <div class="stat stat-accent">
+    <div class="stat-label">Total Users</div>
+    <div class="stat-value">{{ stats.total_users }}</div>
+    <div class="stat-sub">All registered accounts</div>
+  </div>
+  <div class="stat stat-blue">
+    <div class="stat-label">Active</div>
+    <div class="stat-value" style="color:var(--green);">{{ stats.active_users }}</div>
+    <div class="stat-sub">Verified & enabled</div>
+  </div>
+  <div class="stat" style="border-top:3px solid var(--orange);">
+    <div class="stat-label">Pending</div>
+    <div class="stat-value" style="color:var(--orange);">{{ stats.pending_users }}</div>
+    <div class="stat-sub"><a href="{{ url_for('admin_users', status='pending') }}" style="color:var(--orange);">Review now →</a></div>
+  </div>
+  <div class="stat stat-red">
+    <div class="stat-label">Suspended</div>
+    <div class="stat-value" style="color:var(--red);">{{ stats.suspended_users }}</div>
+    <div class="stat-sub">Disabled accounts</div>
+  </div>
+</div>
+
+<!-- STATS ROW 2: COMMISSIONS -->
+<h2 style="font-size:0.75rem;color:var(--grey);text-transform:uppercase;letter-spacing:0.8px;font-weight:700;margin-bottom:0.75rem;">Commission Revenue</h2>
+<div class="grid-3 mb-3">
+  <div class="stat stat-green">
+    <div class="stat-label">Paid Commissions</div>
+    <div class="stat-value" style="font-size:1.5rem;color:var(--green);">₦{{ '{:,.0f}'.format(stats.paid_comm) }}</div>
+    <div class="stat-sub">Successfully collected</div>
+  </div>
+  <div class="stat" style="border-top:3px solid var(--orange);">
+    <div class="stat-label">Pending Commissions</div>
+    <div class="stat-value" style="font-size:1.5rem;color:var(--orange);">₦{{ '{:,.0f}'.format(stats.pending_comm) }}</div>
+    <div class="stat-sub"><a href="{{ url_for('admin_transactions', status='pending') }}" style="color:var(--orange);">Collect now →</a></div>
+  </div>
+  <div class="stat stat-red">
+    <div class="stat-label">Overdue Commissions</div>
+    <div class="stat-value" style="font-size:1.5rem;color:var(--red);">₦{{ '{:,.0f}'.format(stats.overdue_comm) }}</div>
+    <div class="stat-sub"><a href="{{ url_for('admin_transactions', status='overdue') }}" style="color:var(--red);">Resolve now →</a></div>
+  </div>
+</div>
+
+<!-- STATS ROW 3: PLATFORM -->
+<h2 style="font-size:0.75rem;color:var(--grey);text-transform:uppercase;letter-spacing:0.8px;font-weight:700;margin-bottom:0.75rem;">Platform Activity</h2>
+<div class="grid-4 mb-3">
+  <div class="stat"><div class="stat-label">Total Projects</div><div class="stat-value">{{ stats.total_projects }}</div></div>
+  <div class="stat stat-blue"><div class="stat-label">Open Projects</div><div class="stat-value">{{ stats.open_projects }}</div></div>
+  <div class="stat" style="border-top:3px solid var(--purple);"><div class="stat-label">In Progress</div><div class="stat-value" style="color:var(--purple);">{{ stats.active_projects }}</div></div>
+  <div class="stat"><div class="stat-label">Material Listings</div><div class="stat-value">{{ stats.total_materials }}</div></div>
+</div>
+
+<!-- QUICK ACTIONS -->
+<div class="grid-2 mb-3">
+  <div class="card">
+    <h2 style="font-size:1rem;font-weight:700;margin-bottom:1rem;">Recent Registrations</h2>
+    {% if recent_users %}
+    <div style="display:flex;flex-direction:column;gap:0.5rem;">
+      {% for u in recent_users %}
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:0.6rem 0;border-bottom:1px solid var(--border);">
+        <div style="display:flex;align-items:center;gap:0.75rem;">
+          <div style="width:34px;height:34px;border-radius:50%;background:var(--dark);border:1px solid var(--border2);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:0.8rem;flex-shrink:0;">
+            {{ (u.first_name or u.email)[0].upper() }}
+          </div>
+          <div>
+            <div style="font-weight:600;font-size:0.875rem;">{{ u.full_name }}</div>
+            <div style="font-size:0.72rem;color:var(--grey);">{{ u.email }}</div>
+          </div>
+        </div>
+        <div style="display:flex;align-items:center;gap:0.5rem;">
+          <span class="badge badge-{{ u.role }}">{{ u.role }}</span>
+          <span class="badge badge-{{ u.status }}">{{ u.status }}</span>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+    <div style="margin-top:1rem;">
+      <a href="{{ url_for('admin_users') }}" class="btn btn-outline btn-sm">Manage All Users →</a>
+    </div>
+    {% endif %}
+  </div>
+
+  <div class="card">
+    <h2 style="font-size:1rem;font-weight:700;margin-bottom:1rem;">Recent Transactions</h2>
+    {% if recent_txns %}
+    <div style="display:flex;flex-direction:column;gap:0.5rem;">
+      {% for t in recent_txns %}
+      <div style="padding:0.6rem 0;border-bottom:1px solid var(--border);">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;">
+          <div style="flex:1;min-width:0;margin-right:0.5rem;">
+            <div style="font-size:0.8rem;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ t.description }}</div>
+            <div style="font-size:0.72rem;color:var(--grey);">
+              Comm: <b style="color:var(--accent);">₦{{ '{:,.0f}'.format(t.commission_amt or 0) }}</b>
+              · {{ t.created_at.strftime('%d %b') }}
+            </div>
+          </div>
+          <span class="badge badge-{{ t.status }}">{{ t.status }}</span>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+    <div style="margin-top:1rem;">
+      <a href="{{ url_for('admin_transactions') }}" class="btn btn-outline btn-sm">Manage All Commissions →</a>
+    </div>
+    {% endif %}
+  </div>
+</div>
+
+<!-- PENDING USERS ALERT -->
+{% if stats.pending_users > 0 %}
+<div style="background:#1c1200;border:1px solid #ca8a04;border-radius:12px;padding:1.25rem;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:1rem;">
+  <div>
+    <div style="font-weight:700;color:#fbbf24;"><i class="fa fa-exclamation-triangle"></i> {{ stats.pending_users }} account(s) awaiting verification</div>
+    <div style="font-size:0.875rem;color:var(--grey);margin-top:0.2rem;">New users need your review before they can fully participate on the platform.</div>
+  </div>
+  <a href="{{ url_for('admin_users', status='pending') }}" class="btn btn-primary btn-sm">Review Now →</a>
+</div>
+{% endif %}
+
+{% endblock %}

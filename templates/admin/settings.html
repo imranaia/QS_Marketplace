@@ -1,0 +1,58 @@
+{% extends 'admin/base_admin.html' %}
+{% block title %}Platform Settings — Admin{% endblock %}
+{% block admin_content %}
+
+<div class="page-header">
+  <h1>Platform Settings</h1>
+  <p>Configure commission rates and platform options</p>
+</div>
+
+<div class="grid-2" style="gap:2rem;">
+  <div>
+    <div class="card">
+      <h2 style="font-size:1rem;font-weight:700;margin-bottom:1.25rem;"><i class="fa fa-percentage" style="color:var(--accent);"></i> Commission Settings</h2>
+      <form method="POST">
+        <div class="form-group">
+          <label>Platform Commission Rate (%)</label>
+          <input type="number" name="commission_rate" value="{{ settings.get('commission_rate', '5.0') }}" step="0.1" min="0" max="50" required>
+          <div style="font-size:0.75rem;color:var(--grey);margin-top:0.4rem;">This rate is applied to all new transactions. Existing transactions are not affected.</div>
+        </div>
+        <button type="submit" class="btn btn-primary"><i class="fa fa-save"></i> Save Settings</button>
+      </form>
+    </div>
+  </div>
+
+  <div>
+    <div class="card">
+      <h2 style="font-size:1rem;font-weight:700;margin-bottom:1.25rem;"><i class="fa fa-info-circle" style="color:var(--blue);"></i> Current Configuration</h2>
+      <div style="display:flex;flex-direction:column;gap:0.75rem;">
+        <div style="padding:0.75rem;background:var(--dark);border-radius:8px;border:1px solid var(--border);">
+          <div style="font-size:0.72rem;color:var(--grey);text-transform:uppercase;letter-spacing:0.5px;">Commission Rate</div>
+          <div style="font-size:1.5rem;font-weight:800;color:var(--accent);">{{ settings.get('commission_rate', '5.0') }}%</div>
+        </div>
+        <div style="padding:0.75rem;background:var(--dark);border-radius:8px;border:1px solid var(--border);">
+          <div style="font-size:0.72rem;color:var(--grey);text-transform:uppercase;letter-spacing:0.5px;">Database Engine</div>
+          <div style="font-weight:700;">SQLite <span style="font-size:0.75rem;color:var(--grey);font-weight:400;">(default)</span></div>
+          <div style="font-size:0.75rem;color:var(--grey);margin-top:0.2rem;">Change to MySQL in config.py → set USE_MYSQL = True</div>
+        </div>
+        <div style="padding:0.75rem;background:var(--dark);border-radius:8px;border:1px solid var(--border);">
+          <div style="font-size:0.72rem;color:var(--grey);text-transform:uppercase;letter-spacing:0.5px;">Platform Name</div>
+          <div style="font-weight:700;">{{ settings.get('site_name', 'QS Marketplace') }}</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ADMIN ACCOUNTS SECTION -->
+<div class="card mt-3">
+  <h2 style="font-size:1rem;font-weight:700;margin-bottom:1rem;"><i class="fa fa-shield-alt" style="color:var(--red);"></i> Admin Accounts</h2>
+  <p style="font-size:0.875rem;color:var(--grey);margin-bottom:1rem;">Administrators have full access. To add another admin, register a new user and manually set their role in the database, or contact a developer.</p>
+  <div style="background:var(--dark);border:1px solid var(--border);border-radius:10px;padding:1rem;">
+    <div style="font-size:0.8rem;color:var(--grey);">Current Admin</div>
+    <div style="font-weight:700;">{{ current_user.full_name }}</div>
+    <div style="font-size:0.8rem;color:var(--grey);">{{ current_user.email }}</div>
+  </div>
+</div>
+
+{% endblock %}

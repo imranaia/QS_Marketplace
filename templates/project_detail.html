@@ -1,0 +1,110 @@
+{% extends 'base.html' %}
+{% block title %}{{ proj.title }} — QS Marketplace{% endblock %}
+{% block content %}
+<div class="main">
+  <div style="margin-bottom:1.5rem;">
+    <a href="{{ url_for('projects') }}" style="color:var(--grey);font-size:0.875rem;"><i class="fa fa-arrow-left"></i> Back to Projects</a>
+  </div>
+  <div class="grid-2" style="grid-template-columns:1fr 340px;gap:2rem;">
+    <div>
+      <div class="flex items-center gap-2 mb-2 flex-wrap">
+        <span class="badge badge-{{ proj.status }}">{{ proj.status.replace('_',' ').title() }}</span>
+        <span class="tag">{{ proj.category }}</span>
+      </div>
+      <h1 style="font-size:1.75rem;font-weight:800;margin-bottom:1rem;">{{ proj.title }}</h1>
+
+      <div class="card mb-3">
+        <h3 style="font-size:1rem;font-weight:700;margin-bottom:0.75rem;color:var(--grey);text-transform:uppercase;letter-spacing:0.5px;font-size:0.75rem;">Project Description</h3>
+        <p style="color:var(--light);line-height:1.7;">{{ proj.description or 'No description provided.' }}</p>
+      </div>
+
+      <div class="card mb-3">
+        <h3 style="font-size:0.75rem;font-weight:700;margin-bottom:1rem;color:var(--grey);text-transform:uppercase;letter-spacing:0.5px;">Project Details</h3>
+        <div class="grid-2" style="gap:0.75rem;">
+          <div><div style="font-size:0.72rem;color:var(--grey);text-transform:uppercase;letter-spacing:0.5px;">Budget</div><div style="font-weight:700;color:var(--accent);">{% if proj.budget %}₦{{ '{:,.0f}'.format(proj.budget) }}{% else %}Negotiable{% endif %}</div></div>
+          <div><div style="font-size:0.72rem;color:var(--grey);text-transform:uppercase;letter-spacing:0.5px;">Location</div><div style="font-weight:600;">{{ proj.location or 'Nigeria' }}</div></div>
+          <div><div style="font-size:0.72rem;color:var(--grey);text-transform:uppercase;letter-spacing:0.5px;">Deadline</div><div style="font-weight:600;">{% if proj.deadline %}{{ proj.deadline.strftime('%d %b %Y') }}{% else %}Flexible{% endif %}</div></div>
+          <div><div style="font-size:0.72rem;color:var(--grey);text-transform:uppercase;letter-spacing:0.5px;">Posted</div><div style="font-weight:600;">{{ proj.created_at.strftime('%d %b %Y') }}</div></div>
+          <div><div style="font-size:0.72rem;color:var(--grey);text-transform:uppercase;letter-spacing:0.5px;">Client</div><div style="font-weight:600;">{{ proj.client.full_name }}</div></div>
+          <div><div style="font-size:0.72rem;color:var(--grey);text-transform:uppercase;letter-spacing:0.5px;">Total Bids</div><div style="font-weight:600;">{{ bids|length }}</div></div>
+        </div>
+      </div>
+
+      <!-- BIDS SECTION -->
+      <div>
+        <h2 style="font-size:1.25rem;font-weight:700;margin-bottom:1rem;">Bids ({{ bids|length }})</h2>
+        {% if bids %}
+        <div style="display:flex;flex-direction:column;gap:0.75rem;">
+          {% for bid in bids %}
+          <div class="card card-sm {% if bid.status=='accepted' %}style='border-color:var(--green)'{% endif %}">
+            <div class="flex justify-between items-start flex-wrap gap-2">
+              <div>
+                <div class="flex items-center gap-2 mb-1">
+                  <a href="{{ url_for('qs_profile', uid=bid.qs_id) }}" style="font-weight:700;">{{ bid.qs_user.full_name }}</a>
+                  <span class="badge badge-{{ bid.status }}">{{ bid.status }}</span>
+                </div>
+                <div style="color:var(--accent);font-weight:700;font-size:1rem;">₦{{ '{:,.0f}'.format(bid.amount) }}</div>
+                <p style="font-size:0.85rem;color:var(--grey);margin-top:0.5rem;">{{ bid.proposal or 'No proposal written.' }}</p>
+                <div style="font-size:0.75rem;color:var(--grey);margin-top:0.5rem;">{{ bid.created_at.strftime('%d %b %Y') }}</div>
+              </div>
+              {% if current_user.id == proj.client_id and proj.status == 'open' and bid.status == 'pending' %}
+              <form method="POST" action="{{ url_for('accept_bid', pid=proj.id, bid_id=bid.id) }}" onsubmit="return confirm('Accept this bid and award the project?');">
+                <button class="btn btn-success btn-sm"><i class="fa fa-check"></i> Accept Bid</button>
+              </form>
+              {% endif %}
+              {% if current_user.id != proj.client_id and bid.qs_id != current_user.id %}
+              <form method="POST" action="{{ url_for('send_message') }}" style="display:flex;gap:0.5rem;">
+                <input type="hidden" name="receiver_id" value="{{ bid.qs_id }}">
+                <input type="text" name="body" placeholder="Message this QS…" style="min-width:160px;padding:0.4rem 0.75rem;font-size:0.8rem;">
+                <button class="btn btn-outline btn-sm"><i class="fa fa-paper-plane"></i></button>
+              </form>
+              {% endif %}
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+        {% else %}
+        <div class="card"><div class="empty" style="padding:2rem;"><i class="fa fa-gavel"></i><p>No bids yet. Be the first to bid!</p></div></div>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- RIGHT SIDEBAR -->
+    <div>
+      {% if current_user.role == 'qs' and proj.status == 'open' %}
+      <div class="card mb-3">
+        <h3 style="font-size:1rem;font-weight:700;margin-bottom:1rem;">{% if my_bid %}Your Bid{% else %}Place a Bid{% endif %}</h3>
+        {% if my_bid %}
+        <div style="text-align:center;padding:1rem 0;">
+          <div style="font-size:0.75rem;color:var(--grey);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:0.25rem;">Your Bid Amount</div>
+          <div style="font-size:1.75rem;font-weight:800;color:var(--accent);">₦{{ '{:,.0f}'.format(my_bid.amount) }}</div>
+          <span class="badge badge-{{ my_bid.status }}" style="margin-top:0.5rem;">{{ my_bid.status }}</span>
+        </div>
+        {% elif current_user.status != 'active' or not current_user.verified %}
+        <div style="color:var(--orange);font-size:0.875rem;text-align:center;padding:1rem 0;"><i class="fa fa-exclamation-triangle"></i><br>Your account must be verified and active to bid.</div>
+        {% else %}
+        <form method="POST" action="{{ url_for('place_bid', pid=proj.id) }}">
+          <div class="form-group"><label>Your Bid Amount (₦)</label><input type="number" name="amount" placeholder="500000" min="1" required></div>
+          <div class="form-group"><label>Proposal / Cover Letter</label><textarea name="proposal" rows="5" placeholder="Describe your approach, experience, and why you are the best fit for this project…"></textarea></div>
+          <button type="submit" class="btn btn-primary w-full" style="justify-content:center;"><i class="fa fa-gavel"></i> Submit Bid</button>
+        </form>
+        {% endif %}
+      </div>
+      {% endif %}
+
+      <div class="card">
+        <h3 style="font-size:0.75rem;font-weight:700;margin-bottom:1rem;color:var(--grey);text-transform:uppercase;letter-spacing:0.5px;">Contact Client</h3>
+        {% if current_user.id != proj.client_id %}
+        <form method="POST" action="{{ url_for('send_message') }}">
+          <input type="hidden" name="receiver_id" value="{{ proj.client_id }}">
+          <div class="form-group"><textarea name="body" rows="3" placeholder="Send a message to the client…"></textarea></div>
+          <button type="submit" class="btn btn-outline w-full" style="justify-content:center;"><i class="fa fa-paper-plane"></i> Send Message</button>
+        </form>
+        {% else %}
+        <p style="font-size:0.875rem;color:var(--grey);">This is your project.</p>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

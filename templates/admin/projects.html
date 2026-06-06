@@ -1,0 +1,72 @@
+{% extends 'admin/base_admin.html' %}
+{% block title %}Manage Projects — Admin{% endblock %}
+{% block admin_content %}
+
+<div class="page-header">
+  <h1>All Projects</h1>
+  <p>Platform-wide project overview</p>
+</div>
+
+<!-- QUICK STATS -->
+{% set open_p = projects | selectattr('status','eq','open') | list %}
+{% set inprog_p = projects | selectattr('status','eq','in_progress') | list %}
+{% set done_p = projects | selectattr('status','eq','completed') | list %}
+<div class="grid-4 mb-3">
+  <div class="stat"><div class="stat-label">Total</div><div class="stat-value">{{ projects|length }}</div></div>
+  <div class="stat stat-blue"><div class="stat-label">Open</div><div class="stat-value">{{ open_p|length }}</div></div>
+  <div class="stat" style="border-top:3px solid var(--purple);"><div class="stat-label">In Progress</div><div class="stat-value" style="color:var(--purple);">{{ inprog_p|length }}</div></div>
+  <div class="stat stat-green"><div class="stat-label">Completed</div><div class="stat-value" style="color:var(--green);">{{ done_p|length }}</div></div>
+</div>
+
+{% if projects %}
+<div class="table-wrap">
+  <table>
+    <thead>
+      <tr>
+        <th>#</th>
+        <th>Title</th>
+        <th>Client</th>
+        <th>Category</th>
+        <th>Budget</th>
+        <th>Bids</th>
+        <th>QS Assigned</th>
+        <th>Status</th>
+        <th>Posted</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for p in projects %}
+      <tr>
+        <td style="color:var(--grey);font-size:0.8rem;">{{ p.id }}</td>
+        <td>
+          <div style="font-weight:600;font-size:0.875rem;max-width:200px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ p.title }}</div>
+          {% if p.location %}<div style="font-size:0.72rem;color:var(--grey);"><i class="fa fa-map-marker-alt"></i> {{ p.location }}</div>{% endif %}
+        </td>
+        <td>
+          <div style="font-size:0.8rem;font-weight:600;">{{ p.client.full_name if p.client else '—' }}</div>
+        </td>
+        <td><span class="tag">{{ p.category or '—' }}</span></td>
+        <td style="font-size:0.875rem;">{% if p.budget %}₦{{ '{:,.0f}'.format(p.budget) }}{% else %}—{% endif %}</td>
+        <td style="text-align:center;">{{ p.bids|length }}</td>
+        <td>
+          {% if p.assigned_qs %}
+          {% set qs = p.bids | selectattr('qs_id', 'eq', p.assigned_qs) | first %}
+          <div style="font-size:0.8rem;font-weight:600;">
+            {{ qs.qs_user.full_name if qs else ('QS #' ~ p.assigned_qs) }}
+          </div>
+          {% else %}
+          <span style="color:var(--grey);font-size:0.8rem;">Unassigned</span>
+          {% endif %}
+        </td>
+        <td><span class="badge badge-{{ p.status }}">{{ p.status.replace('_',' ') }}</span></td>
+        <td style="font-size:0.8rem;color:var(--grey);">{{ p.created_at.strftime('%d %b %Y') }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% else %}
+<div class="card"><div class="empty"><i class="fa fa-folder-open"></i><p>No projects on the platform yet.</p></div></div>
+{% endif %}
+
+{% endblock %}

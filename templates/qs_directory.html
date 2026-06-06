@@ -1,0 +1,62 @@
+{% extends 'base.html' %}
+{% block title %}QS Directory — QS Marketplace{% endblock %}
+{% block content %}
+<div class="main">
+  <div class="page-header"><h1>QS Professional Directory</h1><p>Find verified Quantity Surveyors for your construction project</p></div>
+
+  <form method="GET" class="card card-sm mb-3" style="display:flex;gap:1rem;flex-wrap:wrap;align-items:flex-end;">
+    <div style="flex:1;min-width:180px;"><label>Search</label><input type="text" name="q" placeholder="Name or specialization…" value="{{ q }}"></div>
+    <div style="min-width:180px;"><label>Location</label><input type="text" name="loc" placeholder="e.g. Lagos" value="{{ loc }}"></div>
+    <div style="min-width:180px;"><label>Specialization</label><input type="text" name="spec" placeholder="e.g. Residential" value="{{ spec }}"></div>
+    <button type="submit" class="btn btn-primary">Filter</button>
+    {% if q or loc or spec %}<a href="{{ url_for('qs_directory') }}" class="btn btn-outline">Clear</a>{% endif %}
+  </form>
+
+  <p style="color:var(--grey);font-size:0.875rem;margin-bottom:1.5rem;">{{ qs_list|length }} professional(s) found</p>
+
+  {% if qs_list %}
+  <div class="grid-3">
+    {% for qs in qs_list %}
+    <div class="card" style="transition:border-color 0.2s,transform 0.2s;" onmouseover="this.style.borderColor='var(--accent)';this.style.transform='translateY(-2px)'" onmouseout="this.style.borderColor='var(--border)';this.style.transform='translateY(0)'">
+      <div style="display:flex;align-items:center;gap:1rem;margin-bottom:1rem;">
+        <div style="width:52px;height:52px;border-radius:50%;background:linear-gradient(135deg,var(--accent),var(--accent2));color:var(--black);display:flex;align-items:center;justify-content:center;font-family:'Syne',sans-serif;font-size:1.3rem;font-weight:800;flex-shrink:0;">
+          {{ (qs.first_name or 'Q')[0] }}
+        </div>
+        <div>
+          <div style="font-weight:700;font-size:1rem;">{{ qs.full_name }}</div>
+          <div style="font-size:0.8rem;color:var(--grey);">{{ qs.specialization or 'Quantity Surveyor' }}</div>
+        </div>
+      </div>
+      {% if qs.certifications %}
+      <div style="display:flex;flex-wrap:wrap;gap:0.25rem;margin-bottom:0.75rem;">
+        {% for c in qs.certifications.split(',') %}<span class="tag">{{ c.strip() }}</span>{% endfor %}
+      </div>
+      {% endif %}
+      <div style="display:flex;flex-direction:column;gap:0.4rem;margin-bottom:1rem;">
+        <div style="font-size:0.8rem;color:var(--grey);"><i class="fa fa-map-marker-alt" style="width:14px;"></i> {{ qs.location or 'Nigeria' }}</div>
+        {% if qs.years_experience %}<div style="font-size:0.8rem;color:var(--grey);"><i class="fa fa-briefcase" style="width:14px;"></i> {{ qs.years_experience }} years experience</div>{% endif %}
+        {% if qs.hourly_rate %}<div style="font-size:0.8rem;color:var(--accent);font-weight:700;"><i class="fa fa-tag" style="width:14px;"></i> ₦{{ '{:,.0f}'.format(qs.hourly_rate) }} / hr</div>{% endif %}
+      </div>
+      <div style="display:flex;gap:0.5rem;">
+        <a href="{{ url_for('qs_profile', uid=qs.id) }}" class="btn btn-outline btn-sm" style="flex:1;justify-content:center;">View Profile</a>
+        {% if current_user.is_authenticated and current_user.id != qs.id %}
+        <button onclick="document.getElementById('msg-{{ qs.id }}').style.display='block'" class="btn btn-primary btn-sm"><i class="fa fa-paper-plane"></i></button>
+        {% endif %}
+      </div>
+      {% if current_user.is_authenticated %}
+      <div id="msg-{{ qs.id }}" style="display:none;margin-top:0.75rem;">
+        <form method="POST" action="{{ url_for('send_message') }}" style="display:flex;gap:0.5rem;">
+          <input type="hidden" name="receiver_id" value="{{ qs.id }}">
+          <input type="text" name="body" placeholder="Your message…" style="flex:1;padding:0.4rem 0.75rem;font-size:0.8rem;">
+          <button type="submit" class="btn btn-primary btn-sm">Send</button>
+        </form>
+      </div>
+      {% endif %}
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="card"><div class="empty"><i class="fa fa-user-tie"></i><p>No QS professionals found{% if q or loc or spec %} matching your filters{% endif %}.</p></div></div>
+  {% endif %}
+</div>
+{% endblock %}

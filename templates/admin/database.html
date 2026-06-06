@@ -1,0 +1,160 @@
+{% extends 'admin/base_admin.html' %}
+{% block title %}Database Management — Admin{% endblock %}
+{% block admin_content %}
+
+<div class="page-header">
+  <h1><i class="fa fa-database" style="color:var(--red);"></i> Database Management</h1>
+  <p>Control database state, seed data, and perform resets</p>
+</div>
+
+<!-- DATABASE STATUS -->
+<div class="grid-2 mb-3" style="gap:1.5rem;">
+  <div class="card">
+    <h2 style="font-size:0.875rem;font-weight:700;color:var(--grey);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:1rem;">Database Status</h2>
+    <div style="display:flex;flex-direction:column;gap:0.6rem;">
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:0.75rem;background:var(--dark);border-radius:8px;border:1px solid var(--border);">
+        <span style="font-size:0.875rem;color:var(--grey);">Engine</span>
+        <span style="font-weight:700;">SQLite</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:0.75rem;background:var(--dark);border-radius:8px;border:1px solid var(--border);">
+        <span style="font-size:0.875rem;color:var(--grey);">File Size</span>
+        <span style="font-weight:700;">{{ db_size }} KB</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:0.75rem;background:var(--dark);border-radius:8px;border:1px solid var(--border);">
+        <span style="font-size:0.875rem;color:var(--grey);">Seed Flag</span>
+        {% if seed_exists %}
+        <span style="color:var(--green);font-weight:700;"><i class="fa fa-lock"></i> Protected — will NOT seed on restart</span>
+        {% else %}
+        <span style="color:var(--orange);font-weight:700;"><i class="fa fa-unlock"></i> Open — WILL seed on restart</span>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2 style="font-size:0.875rem;font-weight:700;color:var(--grey);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:1rem;">Record Counts</h2>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.5rem;">
+      {% for table, count in counts.items() %}
+      <div style="padding:0.6rem 0.75rem;background:var(--dark);border-radius:8px;border:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;">
+        <span style="font-size:0.8rem;color:var(--grey);text-transform:capitalize;">{{ table }}</span>
+        <span style="font-weight:800;color:var(--accent);">{{ count }}</span>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+
+<!-- SEED CONTROLS -->
+<div class="card mb-3">
+  <h2 style="font-size:1rem;font-weight:700;margin-bottom:0.5rem;">
+    <i class="fa fa-seedling" style="color:var(--green);"></i> Seed Controls
+  </h2>
+  <p style="font-size:0.875rem;color:var(--grey);margin-bottom:1.25rem;">
+    The seed flag file tells the app whether to load sample data when it next starts up.
+    Currently: <b style="color:{% if seed_exists %}var(--green){% else %}var(--orange){% endif %};">
+    {% if seed_exists %}Seeding is BLOCKED (flag exists){% else %}Seeding is ALLOWED (no flag){% endif %}</b>
+  </p>
+
+  <div style="display:flex;gap:1rem;flex-wrap:wrap;margin-bottom:1.25rem;">
+
+    <!-- RESEED NOW — always visible -->
+    <form method="POST" action="{{ url_for('admin_database_action') }}"
+          onsubmit="return confirm('Re-seed the database now? Sample data will be added. Continue?')">
+      <input type="hidden" name="action" value="reseed">
+      <button type="submit" class="btn btn-green">
+        <i class="fa fa-leaf"></i> Re-Seed Now
+      </button>
+    </form>
+
+    <!-- PREVENT SEED — show when flag does NOT exist -->
+    {% if not seed_exists %}
+    <form method="POST" action="{{ url_for('admin_database_action') }}"
+          onsubmit="return confirm('Set the seed flag? The database will NOT auto-seed on next restart.')">
+      <input type="hidden" name="action" value="prevent_seed">
+      <button type="submit" class="btn btn-blue">
+        <i class="fa fa-lock"></i> Prevent Seeding on Restart
+      </button>
+    </form>
+    {% else %}
+    <!-- Greyed out visual indicator when already protected -->
+    <button class="btn btn-blue" disabled style="opacity:0.35;cursor:not-allowed;">
+      <i class="fa fa-lock"></i> Prevent Seeding on Restart
+    </button>
+    {% endif %}
+
+    <!-- ALLOW SEED — show when flag DOES exist -->
+    {% if seed_exists %}
+    <form method="POST" action="{{ url_for('admin_database_action') }}"
+          onsubmit="return confirm('Remove seed flag? Database WILL auto-seed on next restart.')">
+      <input type="hidden" name="action" value="allow_seed">
+      <button type="submit" class="btn btn-outline">
+        <i class="fa fa-unlock"></i> Allow Seeding on Restart
+      </button>
+    </form>
+    {% else %}
+    <!-- Greyed out when flag is already absent -->
+    <button class="btn btn-outline" disabled style="opacity:0.35;cursor:not-allowed;">
+      <i class="fa fa-unlock"></i> Allow Seeding on Restart
+    </button>
+    {% endif %}
+
+  </div>
+
+  <!-- Info box always visible -->
+  <div class="card card-sm" style="background:var(--dark);font-size:0.82rem;color:var(--grey);">
+    <div style="font-weight:700;color:var(--light);margin-bottom:0.6rem;"><i class="fa fa-info-circle" style="color:var(--blue);"></i> How These Buttons Work</div>
+    <div style="display:flex;flex-direction:column;gap:0.4rem;">
+      <div><span style="color:var(--green);font-weight:700;"><i class="fa fa-leaf"></i> Re-Seed Now</span> — Inserts sample users, projects, materials &amp; transactions into the current database immediately.</div>
+      <div><span style="color:var(--blue);font-weight:700;"><i class="fa fa-lock"></i> Prevent Seeding on Restart</span> — Creates a flag file so the app skips auto-seeding next time it starts. <em>(Only available when flag is absent)</em></div>
+      <div><span style="color:var(--light);font-weight:700;"><i class="fa fa-unlock"></i> Allow Seeding on Restart</span> — Removes the flag file so sample data loads automatically on the next app restart. <em>(Only available when flag exists)</em></div>
+    </div>
+  </div>
+</div>
+
+<!-- DANGER ZONE -->
+<div class="card" style="border:1px solid var(--red);">
+  <h2 style="font-size:1rem;font-weight:700;color:var(--red);margin-bottom:0.5rem;">
+    <i class="fa fa-exclamation-triangle"></i> Danger Zone — Full Database Reset
+  </h2>
+  <p style="font-size:0.875rem;color:var(--grey);margin-bottom:1.25rem;">
+    This will <b style="color:var(--red);">permanently delete ALL data</b> — every user, project, bid,
+    transaction and message. A fresh admin account will be recreated automatically.
+    You will be logged out. <b>This cannot be undone.</b>
+  </p>
+
+  <div id="reset-confirm-box" style="display:none;background:#1c0a0a;border:1px solid var(--red);border-radius:10px;padding:1.25rem;margin-bottom:1rem;">
+    <div style="font-weight:700;color:var(--red);margin-bottom:0.75rem;"><i class="fa fa-skull"></i> Confirm Full Reset</div>
+    <p style="font-size:0.875rem;color:var(--grey);margin-bottom:1rem;">
+      Type <b style="color:var(--white);background:var(--dark);padding:0 6px;border-radius:4px;">RESET</b> in the box below, then click the button.
+    </p>
+    <div style="display:flex;gap:0.75rem;align-items:center;flex-wrap:wrap;">
+      <input type="text" id="reset-confirmation-input" placeholder='Type RESET here' style="max-width:200px;">
+      <form method="POST" action="{{ url_for('admin_database_action') }}" id="reset-form">
+        <input type="hidden" name="action" value="reset_database">
+        <button type="button" onclick="confirmReset()" class="btn btn-danger">
+          <i class="fa fa-bomb"></i> RESET EVERYTHING
+        </button>
+      </form>
+      <button type="button" onclick="document.getElementById('reset-confirm-box').style.display='none'"
+              class="btn btn-outline btn-sm">Cancel</button>
+    </div>
+  </div>
+
+  <button type="button"
+          onclick="document.getElementById('reset-confirm-box').style.display='block'"
+          class="btn btn-danger">
+    <i class="fa fa-trash-alt"></i> Reset Entire Database
+  </button>
+</div>
+
+<script>
+function confirmReset() {
+  var val = document.getElementById('reset-confirmation-input').value.trim();
+  if (val === 'RESET') {
+    document.getElementById('reset-form').submit();
+  } else {
+    alert('You must type exactly RESET (all capitals) to proceed.');
+  }
+}
+</script>
+{% endblock %}

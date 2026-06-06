@@ -1,0 +1,79 @@
+{% extends 'base.html' %}
+{% block title %}{{ qs.full_name }} — QS Marketplace{% endblock %}
+{% block content %}
+<div class="main">
+  <div style="margin-bottom:1.5rem;"><a href="{{ url_for('qs_directory') }}" style="color:var(--grey);font-size:0.875rem;"><i class="fa fa-arrow-left"></i> Back to Directory</a></div>
+  <div class="grid-2" style="grid-template-columns:320px 1fr;gap:2rem;">
+    <div>
+      <div class="card" style="text-align:center;padding:2rem 1.5rem;">
+        <div style="width:80px;height:80px;border-radius:50%;background:linear-gradient(135deg,var(--accent),var(--accent2));color:var(--black);display:flex;align-items:center;justify-content:center;font-family:'Syne',sans-serif;font-size:2rem;font-weight:800;margin:0 auto 1rem;">
+          {{ (qs.first_name or 'Q')[0] }}
+        </div>
+        <h1 style="font-size:1.25rem;font-weight:800;margin-bottom:0.25rem;">{{ qs.full_name }}</h1>
+        <p style="color:var(--grey);font-size:0.875rem;margin-bottom:0.75rem;">{{ qs.specialization or 'Quantity Surveyor' }}</p>
+        <div class="flex justify-center gap-1 flex-wrap mb-2">
+          <span class="badge badge-active"><i class="fa fa-check-circle"></i> Verified</span>
+        </div>
+        {% if qs.hourly_rate %}
+        <div style="font-size:1.5rem;font-weight:800;color:var(--accent);margin:0.75rem 0 0.25rem;">₦{{ '{:,.0f}'.format(qs.hourly_rate) }}</div>
+        <div style="font-size:0.75rem;color:var(--grey);">per hour</div>
+        {% endif %}
+      </div>
+      <div class="card mt-2">
+        <div style="display:flex;flex-direction:column;gap:0.75rem;">
+          {% if qs.location %}<div><div style="font-size:0.72rem;color:var(--grey);text-transform:uppercase;letter-spacing:0.5px;">Location</div><div style="font-weight:600;margin-top:0.2rem;"><i class="fa fa-map-marker-alt" style="color:var(--accent);"></i> {{ qs.location }}</div></div>{% endif %}
+          {% if qs.years_experience %}<div><div style="font-size:0.72px;color:var(--grey);text-transform:uppercase;letter-spacing:0.5px;font-size:0.72rem;">Experience</div><div style="font-weight:600;margin-top:0.2rem;">{{ qs.years_experience }} years</div></div>{% endif %}
+          {% if qs.phone %}<div><div style="font-size:0.72rem;color:var(--grey);text-transform:uppercase;letter-spacing:0.5px;">Phone</div><div style="font-weight:600;margin-top:0.2rem;">{{ qs.phone }}</div></div>{% endif %}
+          <div><div style="font-size:0.72rem;color:var(--grey);text-transform:uppercase;letter-spacing:0.5px;">Member Since</div><div style="font-weight:600;margin-top:0.2rem;">{{ qs.joined_at.strftime('%B %Y') }}</div></div>
+        </div>
+      </div>
+      {% if current_user.is_authenticated and current_user.id != qs.id %}
+      <div class="card mt-2">
+        <h3 style="font-size:0.875rem;font-weight:700;margin-bottom:0.75rem;">Contact {{ qs.first_name }}</h3>
+        <form method="POST" action="{{ url_for('send_message') }}">
+          <input type="hidden" name="receiver_id" value="{{ qs.id }}">
+          <div class="form-group"><textarea name="body" rows="3" placeholder="Describe your project and how you'd like to work together…"></textarea></div>
+          <button type="submit" class="btn btn-primary w-full" style="justify-content:center;"><i class="fa fa-paper-plane"></i> Send Message</button>
+        </form>
+      </div>
+      {% endif %}
+    </div>
+    <div>
+      {% if qs.bio %}
+      <div class="card mb-3">
+        <h3 style="font-size:0.75rem;color:var(--grey);text-transform:uppercase;letter-spacing:0.5px;font-weight:700;margin-bottom:0.75rem;">About</h3>
+        <p style="color:var(--light);line-height:1.7;">{{ qs.bio }}</p>
+      </div>
+      {% endif %}
+      {% if qs.certifications %}
+      <div class="card mb-3">
+        <h3 style="font-size:0.75rem;color:var(--grey);text-transform:uppercase;letter-spacing:0.5px;font-weight:700;margin-bottom:0.75rem;">Certifications</h3>
+        <div style="display:flex;flex-wrap:wrap;gap:0.5rem;">
+          {% for c in qs.certifications.split(',') %}
+          <span class="tag" style="font-size:0.875rem;padding:0.35rem 0.75rem;"><i class="fa fa-award" style="color:var(--accent);"></i> {{ c.strip() }}</span>
+          {% endfor %}
+        </div>
+      </div>
+      {% endif %}
+      {% if won_projects %}
+      <div class="card">
+        <h3 style="font-size:0.75rem;color:var(--grey);text-transform:uppercase;letter-spacing:0.5px;font-weight:700;margin-bottom:0.75rem;">Project Portfolio ({{ won_projects|length }})</h3>
+        <div style="display:flex;flex-direction:column;gap:0.75rem;">
+          {% for p in won_projects %}
+          <div style="padding:0.75rem;background:var(--dark);border-radius:10px;border:1px solid var(--border);">
+            <div class="flex justify-between items-center">
+              <div>
+                <div style="font-weight:700;font-size:0.9rem;">{{ p.title }}</div>
+                <div style="font-size:0.8rem;color:var(--grey);margin-top:0.2rem;">{{ p.location }} · {{ p.category }}</div>
+              </div>
+              <span class="badge badge-{{ p.status }}">{{ p.status.replace('_',' ') }}</span>
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}

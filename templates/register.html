@@ -1,0 +1,49 @@
+{% extends 'base.html' %}
+{% block title %}Register — QS Marketplace{% endblock %}
+{% block content %}
+<div style="min-height:80vh;display:flex;align-items:center;justify-content:center;padding:2rem;">
+  <div style="width:100%;max-width:500px;">
+    <div style="text-align:center;margin-bottom:2rem;">
+      <h1 style="font-size:1.75rem;font-weight:800;margin-bottom:0.25rem;">Create Account</h1>
+      <p style="color:var(--grey);font-size:0.9rem;">Join the QS Marketplace community</p>
+    </div>
+    <div class="card">
+      <form method="POST">
+        <div class="grid-2">
+          <div class="form-group"><label>First Name</label><input type="text" name="first_name" placeholder="John" required></div>
+          <div class="form-group"><label>Last Name</label><input type="text" name="last_name" placeholder="Doe" required></div>
+        </div>
+        <div class="form-group"><label>Email Address</label><input type="email" name="email" placeholder="you@example.com" required></div>
+        <div class="form-group"><label>Password</label><input type="password" name="password" placeholder="Min. 6 characters" required></div>
+        <div class="form-group">
+          <label>I am a…</label>
+          <select name="role" id="roleSelect" onchange="toggleFields()">
+            <option value="client">Client (I need QS services)</option>
+            <option value="qs">Quantity Surveyor (I provide QS services)</option>
+            <option value="vendor">Vendor (I sell construction materials)</option>
+          </select>
+        </div>
+        <div id="companyField" class="form-group"><label>Company Name <span style="color:var(--grey);font-weight:400;">(optional)</span></label><input type="text" name="company_name" placeholder="Your company or firm name"></div>
+        <div class="form-group"><label>Phone Number</label><input type="text" name="phone" placeholder="+234 800 000 0000"></div>
+        <div class="form-group"><label>Location / City</label><input type="text" name="location" placeholder="Lagos, Nigeria"></div>
+        <div class="card card-sm" style="background:var(--dark);margin-bottom:1.25rem;">
+          <p style="font-size:0.8rem;color:var(--grey);"><i class="fa fa-info-circle" style="color:var(--accent);"></i> Your account will be reviewed by an admin before activation. You'll be able to log in, and your account will be unlocked once verified.</p>
+        </div>
+        <button type="submit" class="btn btn-primary w-full" style="justify-content:center;">
+          <i class="fa fa-user-plus"></i> Create Account
+        </button>
+      </form>
+    </div>
+    <p style="text-align:center;margin-top:1.5rem;font-size:0.875rem;color:var(--grey);">
+      Already have an account? <a href="{{ url_for('login') }}" style="color:var(--accent);">Sign in</a>
+    </p>
+  </div>
+</div>
+<script>
+function toggleFields(){
+  const role=document.getElementById('roleSelect').value;
+  document.getElementById('companyField').style.display=(role==='client')?'none':'block';
+}
+toggleFields();
+</script>
+{% endblock %}

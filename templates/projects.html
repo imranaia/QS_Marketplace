@@ -1,0 +1,59 @@
+{% extends 'base.html' %}
+{% block title %}Projects — QS Marketplace{% endblock %}
+{% block content %}
+<div class="main">
+  <div class="page-header flex justify-between items-center">
+    <div><h1>Open Projects</h1><p>Browse and bid on available construction projects</p></div>
+    {% if current_user.role == 'client' %}
+    <a href="{{ url_for('new_project') }}" class="btn btn-primary"><i class="fa fa-plus"></i> Post Project</a>
+    {% endif %}
+  </div>
+
+  <form method="GET" class="card card-sm mb-3" style="display:flex;gap:1rem;flex-wrap:wrap;align-items:flex-end;">
+    <div style="flex:1;min-width:200px;">
+      <label>Search Projects</label>
+      <input type="text" name="q" placeholder="Search by title…" value="{{ q }}">
+    </div>
+    <div style="min-width:160px;">
+      <label>Category</label>
+      <select name="cat">
+        <option value="">All Categories</option>
+        {% for c in cats %}<option value="{{ c }}" {{ 'selected' if selected_cat==c }}>{{ c }}</option>{% endfor %}
+      </select>
+    </div>
+    <button type="submit" class="btn btn-primary">Search</button>
+    {% if q or selected_cat %}<a href="{{ url_for('projects') }}" class="btn btn-outline">Clear</a>{% endif %}
+  </form>
+
+  {% if projects %}
+  <div style="display:flex;flex-direction:column;gap:1rem;">
+    {% for p in projects %}
+    <div class="card" style="transition:border-color 0.2s;" onmouseover="this.style.borderColor='var(--border2)'" onmouseout="this.style.borderColor='var(--border)'">
+      <div class="flex justify-between items-start flex-wrap gap-2">
+        <div style="flex:1;min-width:0;">
+          <div class="flex items-center gap-2 mb-1 flex-wrap">
+            <span class="badge badge-open">Open</span>
+            <span class="tag">{{ p.category }}</span>
+            <span class="text-xs text-grey">Posted {{ p.created_at.strftime('%d %b %Y') }}</span>
+          </div>
+          <h3 style="font-size:1.1rem;font-weight:700;margin-bottom:0.5rem;">{{ p.title }}</h3>
+          <p style="color:var(--grey);font-size:0.875rem;">{{ (p.description or '')[:180] }}{% if p.description and p.description|length > 180 %}...{% endif %}</p>
+          <div style="display:flex;gap:1rem;flex-wrap:wrap;margin-top:0.75rem;">
+            {% if p.budget %}<span style="font-size:0.8rem;color:var(--grey);"><i class="fa fa-tag"></i> Budget: <b style="color:var(--white);">₦{{ '{:,.0f}'.format(p.budget) }}</b></span>{% endif %}
+            <span style="font-size:0.8rem;color:var(--grey);"><i class="fa fa-map-marker-alt"></i> {{ p.location or 'Nigeria' }}</span>
+            {% if p.deadline %}<span style="font-size:0.8rem;color:var(--grey);"><i class="fa fa-calendar"></i> {{ p.deadline.strftime('%d %b %Y') }}</span>{% endif %}
+            <span style="font-size:0.8rem;color:var(--grey);"><i class="fa fa-gavel"></i> {{ p.bids|length }} bid(s)</span>
+          </div>
+        </div>
+        <div style="flex-shrink:0;">
+          <a href="{{ url_for('project_detail', pid=p.id) }}" class="btn btn-primary btn-sm">View Details</a>
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="card"><div class="empty"><i class="fa fa-folder-open"></i><p>No open projects found{% if q or selected_cat %} matching your filters{% endif %}.</p></div></div>
+  {% endif %}
+</div>
+{% endblock %}

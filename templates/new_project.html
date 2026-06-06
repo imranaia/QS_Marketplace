@@ -1,0 +1,31 @@
+{% extends 'base.html' %}
+{% block title %}Post a Project — QS Marketplace{% endblock %}
+{% block content %}
+<div class="main" style="max-width:700px;">
+  <div style="margin-bottom:1.5rem;"><a href="{{ url_for('dashboard') }}" style="color:var(--grey);font-size:0.875rem;"><i class="fa fa-arrow-left"></i> Back to Dashboard</a></div>
+  <div class="page-header"><h1>Post a New Project</h1><p>Describe your construction project to attract qualified QS professionals</p></div>
+  <div class="card">
+    <form method="POST">
+      <div class="form-group"><label>Project Title</label><input type="text" name="title" placeholder="e.g. 3-Bedroom Bungalow — Lekki Phase 2" required></div>
+      <div class="form-group"><label>Description</label><textarea name="description" rows="5" placeholder="Describe the scope of work, what services you need, and any specific requirements…" required></textarea></div>
+      <div class="grid-2">
+        <div class="form-group"><label>Category</label>
+          <select name="category" required>
+            <option value="">— Select category —</option>
+            {% for c in cats %}<option value="{{ c }}">{{ c }}</option>{% endfor %}
+          </select>
+        </div>
+        <div class="form-group"><label>Location</label><input type="text" name="location" placeholder="e.g. Lekki, Lagos" required></div>
+      </div>
+      <div class="grid-2">
+        <div class="form-group"><label>Budget (₦) <span style="color:var(--grey);font-weight:400;">(optional)</span></label><input type="number" name="budget" placeholder="e.g. 5000000" min="0"></div>
+        <div class="form-group"><label>Deadline <span style="color:var(--grey);font-weight:400;">(optional)</span></label><input type="date" name="deadline"></div>
+      </div>
+      <div style="display:flex;gap:1rem;justify-content:flex-end;margin-top:0.5rem;">
+        <a href="{{ url_for('dashboard') }}" class="btn btn-outline">Cancel</a>
+        <button type="submit" class="btn btn-primary"><i class="fa fa-paper-plane"></i> Post Project</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}
