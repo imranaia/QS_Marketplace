@@ -17,7 +17,7 @@ app.config['SQLALCHEMY_DATABASE_URI'] = config.DATABASE_URL
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['UPLOAD_FOLDER']       = config.UPLOAD_FOLDER
 os.makedirs(config.UPLOAD_FOLDER, exist_ok=True)
-os.makedirs(os.path.join(config.BASE_DIR, "database"), exist_ok=True)
+os.makedirs("/tmp/database", exist_ok=True)
 
 db = SQLAlchemy(app)
 login_manager = LoginManager(app)
@@ -202,7 +202,7 @@ def seed_database():
     vendor1 = User.query.filter_by(email='vendor1@example.com').first()
     vendor2 = User.query.filter_by(email='vendor2@example.com').first()
 
-    if not client1 or not qs1: 
+    if not client1 or not qs1:
         db.session.commit()
         open(config.SEED_FLAG_FILE, 'w').write('seeded')
         return
@@ -596,7 +596,6 @@ def toggle_material(mid):
 def messages():
     received = Message.query.filter_by(receiver_id=current_user.id).order_by(Message.created_at.desc()).all()
     sent     = Message.query.filter_by(sender_id=current_user.id).order_by(Message.created_at.desc()).all()
-    # Mark received as read
     Message.query.filter_by(receiver_id=current_user.id, read=False).update({'read': True})
     db.session.commit()
     return render_template('messages.html', received=received, sent=sent)
@@ -782,9 +781,9 @@ def admin_settings():
 @login_required
 @admin_required
 def admin_database():
-    seed_exists  = os.path.exists(config.SEED_FLAG_FILE)
-    db_path = os.path.join(config.BASE_DIR, 'database', 'marketplace.db')
-    db_size  = round(os.path.getsize(db_path) / 1024, 1) if os.path.exists(db_path) else 0
+    seed_exists = os.path.exists(config.SEED_FLAG_FILE)
+    db_path     = "/tmp/marketplace.db"
+    db_size     = round(os.path.getsize(db_path) / 1024, 1) if os.path.exists(db_path) else 0
     counts = dict(
         users=User.query.count(), projects=Project.query.count(),
         bids=Bid.query.count(), materials=Material.query.count(),
@@ -799,13 +798,10 @@ def admin_database_action():
     action = request.form.get('action')
 
     if action == 'reset_database':
-        # Drop and recreate all tables
         db.drop_all()
         db.create_all()
-        # Remove seed flag so fresh data can be seeded or not
         if os.path.exists(config.SEED_FLAG_FILE):
             os.remove(config.SEED_FLAG_FILE)
-        # Recreate admin
         admin = User(email='admin@qsmarket.com', role='admin', first_name='Platform',
                      last_name='Admin', status='active', verified=True)
         admin.set_password('Admin@123')
@@ -831,11 +827,6 @@ def admin_database_action():
         flash('Seed flag removed. Database will seed on next application restart.', 'info')
 
     return redirect(url_for('admin_database'))
-
-# ════════════════════════════════════════════════════════════
-#  MAIN
-# ════════════════════════════════════════════════════════════
-
 
 # ════════════════════════════════════════════════════════════
 #  ERROR HANDLERS
