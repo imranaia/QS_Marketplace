@@ -4,7 +4,6 @@
 #  DEFAULT: SQLite (no setup needed, just run the app)
 #  TO USE MYSQL: Set USE_MYSQL = True and fill in the details
 # ============================================================
-
 import os
 
 # ── Database Choice ─────────────────────────────────────────
@@ -20,11 +19,11 @@ MYSQL_DATABASE = "qs_marketplace"
 # ── App Settings ────────────────────────────────────────────
 SECRET_KEY       = "qs-marketplace-secret-2024-xK9pL2mN"
 BASE_DIR         = os.path.dirname(os.path.abspath(__file__))
-UPLOAD_FOLDER    = os.path.join(BASE_DIR, "static", "uploads")
+UPLOAD_FOLDER    = os.path.join("/tmp", "uploads")
 COMMISSION_RATE  = 5.0   # Default commission percentage
 
 # ── Seed Control ────────────────────────────────────────────
-SEED_FLAG_FILE = os.path.join(BASE_DIR, "database", ".seeded")
+SEED_FLAG_FILE = "/tmp/.seeded"
 
 # ── Build DB URL ─────────────────────────────────────────────
 if USE_MYSQL:
@@ -33,4 +32,4 @@ if USE_MYSQL:
         f"@{MYSQL_HOST}:{MYSQL_PORT}/{MYSQL_DATABASE}"
     )
 else:
-    DATABASE_URL = "sqlite:///" + os.path.join(BASE_DIR, "database", "marketplace.db")
+    DATABASE_URL = "sqlite:////tmp/marketplace.db"
