@@ -33,26 +33,24 @@ class User(UserMixin, db.Model):
     id            = db.Column(db.Integer, primary_key=True)
     email         = db.Column(db.String(150), unique=True, nullable=False)
     password_hash = db.Column(db.String(255), nullable=False)
-    role          = db.Column(db.String(20), nullable=False)   # admin/client/qs/vendor
+    role          = db.Column(db.String(20), nullable=False)
     first_name    = db.Column(db.String(80))
     last_name     = db.Column(db.String(80))
     phone         = db.Column(db.String(30))
     location      = db.Column(db.String(120))
     bio           = db.Column(db.Text)
     avatar        = db.Column(db.String(200), default='default.png')
-    status        = db.Column(db.String(20), default='pending')  # pending/active/suspended
+    status        = db.Column(db.String(20), default='pending')
     verified      = db.Column(db.Boolean, default=False)
     joined_at     = db.Column(db.DateTime, default=datetime.utcnow)
     last_login    = db.Column(db.DateTime)
 
-    # Role-specific
     company_name      = db.Column(db.String(150))
     specialization    = db.Column(db.String(200))
     years_experience  = db.Column(db.Integer)
     certifications    = db.Column(db.Text)
     hourly_rate       = db.Column(db.Float)
 
-    # Relationships
     projects_posted   = db.relationship('Project', foreign_keys='Project.client_id', backref='client', lazy=True)
     bids              = db.relationship('Bid', backref='qs_user', lazy=True)
     materials         = db.relationship('Material', backref='vendor', lazy=True)
@@ -75,7 +73,7 @@ class Project(db.Model):
     budget      = db.Column(db.Float)
     deadline    = db.Column(db.Date)
     category    = db.Column(db.String(80))
-    status      = db.Column(db.String(30), default='open')  # open/in_progress/completed/cancelled
+    status      = db.Column(db.String(30), default='open')
     created_at  = db.Column(db.DateTime, default=datetime.utcnow)
     assigned_qs = db.Column(db.Integer, db.ForeignKey('users.id'))
     bids        = db.relationship('Bid', backref='project', lazy=True)
@@ -89,7 +87,7 @@ class Bid(db.Model):
     qs_id       = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
     amount      = db.Column(db.Float, nullable=False)
     proposal    = db.Column(db.Text)
-    status      = db.Column(db.String(20), default='pending')  # pending/accepted/rejected
+    status      = db.Column(db.String(20), default='pending')
     created_at  = db.Column(db.DateTime, default=datetime.utcnow)
 
 
@@ -100,7 +98,7 @@ class Material(db.Model):
     name        = db.Column(db.String(150), nullable=False)
     category    = db.Column(db.String(80))
     description = db.Column(db.Text)
-    unit        = db.Column(db.String(30))   # kg, bag, piece, m2…
+    unit        = db.Column(db.String(30))
     price       = db.Column(db.Float, nullable=False)
     stock       = db.Column(db.Integer, default=0)
     location    = db.Column(db.String(120))
@@ -129,7 +127,7 @@ class Transaction(db.Model):
     amount          = db.Column(db.Float, nullable=False)
     commission_rate = db.Column(db.Float, default=config.COMMISSION_RATE)
     commission_amt  = db.Column(db.Float)
-    status          = db.Column(db.String(20), default='pending')  # pending/paid/overdue/disputed
+    status          = db.Column(db.String(20), default='pending')
     created_at      = db.Column(db.DateTime, default=datetime.utcnow)
     paid_at         = db.Column(db.DateTime)
     notes           = db.Column(db.Text)
@@ -192,7 +190,6 @@ def seed_database():
 
     db.session.commit()
 
-    # Re-fetch users
     admin   = User.query.filter_by(role='admin').first()
     client1 = User.query.filter_by(email='client1@example.com').first()
     client2 = User.query.filter_by(email='client2@example.com').first()
@@ -207,7 +204,6 @@ def seed_database():
         open(config.SEED_FLAG_FILE, 'w').write('seeded')
         return
 
-    # Projects
     projects_seed = [
         dict(cid=client1.id, title='5-Bedroom Duplex — Lekki Phase 1',      desc='Complete QS services for a luxury 5-bedroom duplex including BOQ preparation, cost planning and project monitoring.', loc='Lekki, Lagos', budget=8500000, cat='Residential',     status='open',        dl=date(2025,3,30)),
         dict(cid=client1.id, title='Office Complex — Victoria Island',        desc='6-storey commercial office complex. Full QS services from inception to completion required.', loc='Victoria Island, Lagos', budget=45000000, cat='Commercial',      status='in_progress', dl=date(2025,6,15), aqs=qs2.id),
@@ -229,7 +225,6 @@ def seed_database():
 
     proj1, proj2, proj3, proj4, proj5 = proj_objs
 
-    # Bids
     bids_seed = [
         dict(pid=proj1.id, qid=qs1.id, amt=420000,  prop='I will deliver a comprehensive BOQ with market pricing within 10 working days.', status='pending'),
         dict(pid=proj1.id, qid=qs2.id, amt=550000,  prop='15 years experience in luxury residential. Full service including cost monitoring.', status='pending'),
@@ -243,7 +238,6 @@ def seed_database():
         bid = Bid(project_id=b['pid'], qs_id=b['qid'], amount=b['amt'], proposal=b['prop'], status=b['status'], created_at=datetime.utcnow())
         db.session.add(bid)
 
-    # Materials
     mats_seed = [
         dict(vid=vendor1.id, name='Dangote 3X Cement',         cat='Cement',       unit='50kg bag', price=8500,   stock=5000, desc='Premium quality cement for all construction purposes.'),
         dict(vid=vendor1.id, name='Iron Rod 16mm (Y16)',        cat='Steel',        unit='per ton',  price=680000, stock=200,  desc='High tensile reinforcement steel rods.'),
@@ -262,7 +256,6 @@ def seed_database():
                        active=True, created_at=datetime.utcnow())
         db.session.add(mat)
 
-    # Transactions
     txns_seed = [
         dict(pid=proj2.id, uid=qs2.id,     desc='QS Service Fee — Office Complex VI',     amt=1800000, rate=5.0, status='paid'),
         dict(pid=proj3.id, uid=qs3.id,     desc='QS Service Fee — Shopping Mall Kano',    amt=4500000, rate=5.0, status='pending'),
@@ -279,18 +272,16 @@ def seed_database():
                           paid_at=datetime.utcnow() if t['status']=='paid' else None)
         db.session.add(txn)
 
-    # Messages
     msgs = [
-        dict(sid=client1.id, rid=qs1.id,   body='Hello Adebayo, I saw your profile and I am interested in your services for my Lekki project.'),
-        dict(sid=qs1.id,     rid=client1.id,body='Hello Emeka, thank you for reaching out. I would be happy to discuss the Lekki duplex project with you.'),
-        dict(sid=client2.id, rid=qs3.id,   body='We have reviewed your bid for the shopping mall. Can we schedule a site visit?'),
-        dict(sid=qs3.id,     rid=client2.id,body='Absolutely Fatima. I am available this week. Please share the site address and preferred date.'),
+        dict(sid=client1.id, rid=qs1.id,    body='Hello Adebayo, I saw your profile and I am interested in your services for my Lekki project.'),
+        dict(sid=qs1.id,     rid=client1.id, body='Hello Emeka, thank you for reaching out. I would be happy to discuss the Lekki duplex project with you.'),
+        dict(sid=client2.id, rid=qs3.id,    body='We have reviewed your bid for the shopping mall. Can we schedule a site visit?'),
+        dict(sid=qs3.id,     rid=client2.id, body='Absolutely Fatima. I am available this week. Please share the site address and preferred date.'),
     ]
     for m in msgs:
         msg = Message(sender_id=m['sid'], receiver_id=m['rid'], body=m['body'], created_at=datetime.utcnow())
         db.session.add(msg)
 
-    # Site settings
     settings = [
         ('commission_rate', str(config.COMMISSION_RATE)),
         ('site_name', 'QS Marketplace'),
@@ -304,6 +295,15 @@ def seed_database():
     db.session.commit()
     open(config.SEED_FLAG_FILE, 'w').write('seeded')
     print("  [SEED] Done! Sample data loaded successfully.")
+
+
+# ════════════════════════════════════════════════════════════
+#  INITIALISE DATABASE (runs on Vercel cold start)
+# ════════════════════════════════════════════════════════════
+
+with app.app_context():
+    db.create_all()
+    seed_database()
 
 
 # ════════════════════════════════════════════════════════════
